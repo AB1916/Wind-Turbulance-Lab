@@ -1,0 +1,194 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Apr 27 16:14:18 2019
+
+@author: lsmit
+"""
+
+import matplotlib.pyplot as plt
+import numpy as np
+from statsmodels.graphics.tsaplots import plot_acf
+import random
+import pandas
+def fit(m,n, order = 1): # fits straight line to x,y data
+    slope, intercept = np.polyfit(m,n, 1) # gets slope and intercept
+    x =np.linspace(min(m),max(m),200)
+    y = slope* (x**order) + intercept 
+    plt.plot(x,y,'k',linestyle = '-') # plots fit with 200 points
+    
+    return slope, intercept
+
+
+def Trap(x,end):
+    total = sum(x[1:end])
+    total += x[0]/2
+    total +=x[end]/2
+    return total
+
+
+def acf(x, length=400):
+    return np.array([1]+[np.corrcoef(x[:-i], x[i:])[0,1]  \
+        for i in range(1, length)])
+
+
+def ranv(number=600,seed_val =7): #number is the sample size,  seed_val is the value of the seed for the generator
+    points = [] # creates list to store the generated values
+    random.seed(seed_val) #initializes seed valuee
+    while len(points)< number:
+        points.append(random.uniform(0,1))
+    return points
+
+def readspeed(name,lowr,highr):
+    file = pandas.read_csv(name)
+    windfile = (list(file.ix[lowr:highr,3]))
+    truewindfile =[]
+    for i in windfile:
+        a = float(i)
+        truewindfile.append(a)
+    return np.array(truewindfile)
+
+def readTemp(name,lowr,highr):
+    file = pandas.read_csv(name)
+    windfile = (list(file.ix[lowr:highr,5]))
+    truewindfile =[]
+    for i in windfile:
+        a = float(i)
+        truewindfile.append(a)
+    return truewindfile
+
+
+b=readspeed('BofaCal.csv',5,300)
+c= readspeed('CandiceCal.csv',5,300)
+w= readspeed('WilmaCal.csv',5,300)
+l = readspeed('LigmaCal.csv',5,300)
+calspeed = np.mean([np.mean(b),np.mean(c),np.mean(w),np.mean(l)])
+bcal = np.mean(b) - calspeed
+ccal = np.mean(c) - calspeed
+wcal = np.mean(w) - calspeed
+lcal = np.mean(l) - calspeed
+
+
+
+
+bgv = readspeed('BofaGrass1.csv',5,960) +bcal
+bgT = readTemp('BofaGrass1.csv',5,960) 
+cgv = readspeed('CandiceGrass1.csv',5,960) +ccal
+cgT = readTemp('CandiceGrass1.csv',5,960)
+wgv = readspeed('Wilmagrass1.csv',5,960) +wcal
+wgT = readTemp('Wilmagrass1.csv',5,960)
+lgv = readspeed('ligmagrass1.csv',5,960)+lcal
+lgT = readTemp('ligmagrass1.csv',5,960)
+
+bwv = readspeed('BofaWater1.csv',5,600)#-bcal
+bwT = readTemp('BofaWater1.csv',5,600)
+cwv = readspeed('Candicewater1.csv',5,600)# -ccal
+#cwT = readTemp('Candicewater1.csv',5,500)
+wwv = readspeed('wilmawater1.csv',5,600)#-wcal
+wwT = readTemp('wilmawater1.csv',5,600)
+lwv = readspeed('ligmawater1.csv',5,600) #-lcal
+lwT = readTemp('ligmawater1.csv',5,600)
+
+zlist =[0.14,0.52,0.89,1.26]
+zlistadj =[0.14,0.89,1.26]
+GTlist = [ np.mean(wgT),np.mean(cgT),np.mean(bgT),np.mean(lgT)]
+WTlist = [  np.mean(wwT),np.mean(bwT),np.mean(lwT)]
+
+
+#w  c   b    l
+
+#df = readspeed('ligmagrass1.csv',5,900)
+plot_acf(wgv,alpha = None)
+plt.title("Autocorrelation - Grass: Anemometer 1")
+plt.xlabel("Time Lag(s)")
+plt.ylabel("R")
+#plt.figure()
+acfwg = (acf(wgv))
+plt.plot(acfwg)
+print()
+print("Autocorrelation - Grass: Anemometer 1")
+print("S=",Trap(acfwg,81))
+print("U(z)S =",Trap(acfwg,81)*np.mean(wgv))
+print()
+
+plot_acf(cgv,alpha = None)
+plt.title("Autocorrelation - Grass: Anemometer 2")
+plt.xlabel("Time Lag(s)")
+plt.ylabel("R")
+#plt.figure()
+acfcg = (acf(cgv))
+#plt.plot(acfcg)
+print("Autocorrelation - Grass: Anemometer 2","                               S=",Trap(acfcg,82))
+print("U(z)S =",Trap(acfcg,81)*np.mean(cgv))
+print()
+
+
+
+plot_acf(bgv,alpha = None)
+plt.title("Autocorrelation - Grass: Anemometer 3")
+plt.xlabel("Time Lag(s)")
+plt.ylabel("R")
+#plt.figure()
+acfbg = (acf(bgv))
+#plt.plot(acfbg)
+print("Autocorrelation - Grass: Anemometer 3","                               S=",Trap(acfbg,84))
+print("U(z)S =",Trap(acfbg,81)*np.mean(bgv))
+print()
+
+plot_acf(lgv,alpha = None)
+plt.title("Autocorrelation - Grass: Anemometer 4")
+plt.xlabel("Time Lag(s)")
+plt.ylabel("R")
+#plt.figure()
+acflg = (acf(lgv))
+#plt.plot(acflg)
+print("Autocorrelation - Grass: Anemometer 4","                               S=",Trap(acflg,83))
+print("U(z)S =",Trap(acflg,81)*np.mean(lgv))
+print()
+#################################################################
+plot_acf(wwv,alpha = None)
+plt.title("Autocorrelation - Water: Anemometer 1")
+plt.xlabel("Time Lag(s)")
+plt.ylabel("R")
+#plt.figure()
+acfww = (acf(wwv))
+#plt.plot(acfww)
+print("Autocorrelation - Water: Anemometer 1","                               S=",Trap(acfww,52))
+print("U(z)S =",Trap(acfww,81)*np.mean(wwv))
+print()
+
+
+
+plot_acf(cwv,alpha = None)
+plt.title("Autocorrelation - Water: Anemometer 2")
+plt.xlabel("Time Lag(s)")
+plt.ylabel("R")
+#plt.figure()
+acfcw = (acf(cwv))
+#plt.plot(acfcw)
+print("Autocorrelation - Water: Anemometer 2","                               S=",Trap(acfcw,55))
+print("U(z)S =",Trap(acfcw,81)*np.mean(cwv))
+print()
+
+
+
+plot_acf(bwv,alpha = None)
+plt.title("Autocorrelation - Water: Anemometer 3")
+plt.xlabel("Time Lag(s)")
+plt.ylabel("R")
+#plt.figure()
+acfbw = (acf(bwv))
+#plt.plot(acfbw)
+print("Autocorrelation - Water: Anemometer 3","                               S=",Trap(acfbw,52))
+print("U(z)S =",Trap(acfbw,81)*np.mean(bwv))
+print()
+
+plot_acf(lwv,alpha = None)
+plt.title("Autocorrelation - Water: Anemometer 4")
+plt.xlabel("Time Lag(s)")
+plt.ylabel("R")
+#plt.figure()
+acflw = (acf(lwv))
+#plt.plot(acflw)
+print("Autocorrelation - Water: Anemometer 4","                               S=",Trap(acflw,53))
+print("U(z)S =",Trap(acflw,81)*np.mean(lwv))
+print()
