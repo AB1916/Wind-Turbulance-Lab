@@ -1,0 +1,170 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Mar 18 11:33:56 2019
+
+@author: lsmit
+"""
+import matplotlib.pyplot as plt
+import numpy as np
+from statsmodels.graphics.tsaplots import plot_acf
+import random
+import pandas
+def fit(m,n, order = 1): # fits straight line to x,y data
+    slope, intercept = np.polyfit(m,n, 1) # gets slope and intercept
+    x =np.linspace(min(m),max(m),200)
+    y = slope* (x**order) + intercept 
+    plt.plot(x,y,'k',linestyle = '-') # plots fit with 200 points
+    
+    return slope, intercept
+
+
+def Trap(x,end):
+    total = sum(x[1:end])
+    total += x[0]/2
+    total +=x[end]/2
+    return total
+
+
+def acf(x, length=108):
+    return np.array([1]+[np.corrcoef(x[:-i], x[i:])[0,1]  \
+        for i in range(1, length)])
+
+
+def ranv(number=600,seed_val =7): #number is the sample size,  seed_val is the value of the seed for the generator
+    points = [] # creates list to store the generated values
+    random.seed(seed_val) #initializes seed valuee
+    while len(points)< number:
+        points.append(random.uniform(0,1))
+    return points
+
+def readspeed(name,lowr,highr):
+    file = pandas.read_csv(name)
+    windfile = (list(file.ix[lowr:highr,3]))
+    truewindfile =[]
+    for i in windfile:
+        a = float(i)
+        truewindfile.append(a)
+    return np.array(truewindfile)
+
+def readTemp(name,lowr,highr):
+    file = pandas.read_csv(name)
+    windfile = (list(file.ix[lowr:highr,5]))
+    truewindfile =[]
+    for i in windfile:
+        a = float(i)
+        truewindfile.append(a)
+    return truewindfile
+
+
+b=readspeed('BofaCal.csv',5,300)
+c= readspeed('CandiceCal.csv',5,300)
+w= readspeed('WilmaCal.csv',5,300)
+l = readspeed('LigmaCal.csv',5,300)
+calspeed = np.mean([np.mean(b),np.mean(c),np.mean(w),np.mean(l)])
+bcal = np.mean(b) - calspeed
+ccal = np.mean(c) - calspeed
+wcal = np.mean(w) - calspeed
+lcal = np.mean(l) - calspeed
+
+
+
+
+bgv = readspeed('BofaGrass1.csv',5,960) +bcal
+bgT = readTemp('BofaGrass1.csv',5,960) 
+cgv = readspeed('CandiceGrass1.csv',5,960) +ccal
+cgT = readTemp('CandiceGrass1.csv',5,960)
+wgv = readspeed('Wilmagrass1.csv',5,960) +wcal
+wgT = readTemp('Wilmagrass1.csv',5,960)
+lgv = readspeed('ligmagrass1.csv',5,960)+lcal
+lgT = readTemp('ligmagrass1.csv',5,960)
+
+bwv = readspeed('BofaWater1.csv',5,600)#-bcal
+bwT = readTemp('BofaWater1.csv',5,600)
+cwv = readspeed('Candicewater1.csv',5,600)# -ccal
+#cwT = readTemp('Candicewater1.csv',5,500)
+wwv = readspeed('wilmawater1.csv',5,600)#-wcal
+wwT = readTemp('wilmawater1.csv',5,600)
+lwv = readspeed('ligmawater1.csv',5,600) #-lcal
+lwT = readTemp('ligmawater1.csv',5,600)
+
+zlist =[0.14,0.52,0.89,1.26]
+zlistadj =[0.14,0.89,1.26]
+GTlist = [ np.mean(wgT),np.mean(cgT),np.mean(bgT),np.mean(lgT)]
+WTlist = [  np.mean(wwT),np.mean(bwT),np.mean(lwT)]
+
+u = [ np.mean(wgv),np.mean(cgv),np.mean(bgv),np.mean(lgv)]
+x = np.log(np.array(zlist))
+plt.figure(1)
+plt.scatter(x,u)
+print(fit(x,u)[1])
+grad1 = fit(x,u)[0]
+
+
+plt.title("grassAll")
+plt.xlabel("ln(z)")
+plt.ylabel("mean speed")
+
+
+u1 = [  np.mean(wwv),np.mean(cwv),np.mean(bwv),np.mean(lwv)]
+x1 = np.log(np.array(zlist))
+plt.figure(2)
+plt.scatter(x1,u1)
+grad2 =fit(x1,u1)[0]
+
+plt.title("WaterAll")
+plt.xlabel("ln(z)")
+plt.ylabel("mean speed")
+
+
+
+
+plot_acf(ranv())
+plt.title("Autocorrelation random numbers")
+plt.xlabel("tau")
+plt.ylabel("R")
+
+
+df = readspeed('ligmagrass1.csv',300,900)
+plot_acf(df)
+plt.title("Autocorrelation wind")
+plt.xlabel("tau")
+plt.ylabel("R")
+
+plt.figure(5)
+plt.scatter(zlist[0:2],u[0:2])
+plt.scatter(zlist[0:2],GTlist[0:2])
+print(9.81*fit(zlist[0:2],GTlist[0:2])[0]*(1/(np.mean(GTlist[0:2])*(fit(zlist[0:2],u[0:2])[0]**2))))
+
+plt.figure(6)
+plt.scatter(zlist[0:2],u1[0:2])
+plt.scatter(zlistadj[0:2],WTlist[0:2])
+print(9.81*fit(zlistadj[0:2],WTlist[0:2])[0]*(1/(np.mean(WTlist[0:2])*(fit(zlist[0:2],u1[0:2])[0]**2))))
+
+
+lghv = readspeed('ligmaGrassHorizontal.csv',5,600)+lcal
+bgvv =readspeed('BofaGrassVertical.csv',5,600)+bcal
+lwhv =readspeed('ligmaWaterHorizontal.csv',5,600)+lcal
+bwvv = readspeed('BofaWaterVertical.csv',5,600)+bcal
+
+
+plt.figure(7)
+lghv = np.array(lghv)
+lghv -= np.mean(lghv)
+plt.plot(lghv)
+plt.plot(bgvv)
+
+ustarg = (np.mean(bgvv)*np.mean(np.abs(lghv)))**0.5
+print('grass k is', ustarg/grad1)
+print('grass u* is', ustarg)
+
+
+plt.figure(8)
+lwhv = np.array(lwhv)
+lwhv -= np.mean(lwhv)
+plt.plot(lwhv)
+plt.plot(bwvv)
+plt.figure(9)
+plt.scatter(x1[0:2],u1[0:2])
+grad2 =fit(x1[0:2],u1[0:2])[0]
+ustarw = (np.mean(bwvv)*np.mean(np.abs(lwhv)))**0.5
+print('water k is', ustarw/grad2)
